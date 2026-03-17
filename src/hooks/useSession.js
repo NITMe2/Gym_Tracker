@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { getActiveSession, startSession, endSession } from '../db/database'
 
+const STALE_THRESHOLD_MS = 3 * 60 * 60 * 1000 // 3 hours
+
 export function useSession(userId) {
   const [session, setSession] = useState(null)
   const [elapsed, setElapsed] = useState(0)
@@ -8,10 +10,15 @@ export function useSession(userId) {
 
   useEffect(() => {
     if (!userId) return
-    getActiveSession(userId).then((s) => {
+    getActiveSession(userId).then(async (s) => {
       if (s) {
+        const age = Date.now() - s.startedAt
+        if (age > STALE_THRESHOLD_MS) {
+          await endSession(s.id)
+          return
+        }
         setSession(s)
-        setElapsed(Math.floor((Date.now() - s.startedAt) / 1000))
+        setElapsed(Math.floor(age / 1000))
       }
     })
   }, [userId])

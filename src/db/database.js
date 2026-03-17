@@ -118,14 +118,35 @@ export async function getLastLogForExercise(userId, exerciseId) {
 
 export async function exportAllData(userId) {
   const user = await db.users.get(userId)
-  const exercises = await db.exercises.where('isCustom').equals(1).toArray()
+  const exercises = await db.exercises.filter((ex) => ex.isCustom === true).toArray()
   const logs = await db.logs.where('userId').equals(userId).toArray()
   const sessions = await db.sessions.where('userId').equals(userId).toArray()
   return JSON.stringify({ user, exercises, logs, sessions }, null, 2)
 }
 
 export async function importAllData(jsonString) {
-  const { user, exercises, logs, sessions } = JSON.parse(jsonString)
+  let parsed
+  try {
+    parsed = JSON.parse(jsonString)
+  } catch {
+    throw new Error('Invalid JSON file — could not parse backup data.')
+  }
+
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error('Invalid backup format — expected a JSON object.')
+  }
+
+  const { user, exercises, logs, sessions } = parsed
+
+  if (exercises && !Array.isArray(exercises)) throw new Error('Invalid backup: exercises must be an array.')
+  if (logs && !Array.isArray(logs)) throw new Error('Invalid backup: logs must be an array.')
+  if (sessions && !Array.isArray(sessions)) throw new Error('Invalid backup: sessions must be an array.')
+
+  const MAX_IMPORT_ITEMS = 50000
+  if ((exercises?.length || 0) + (logs?.length || 0) + (sessions?.length || 0) > MAX_IMPORT_ITEMS) {
+    throw new Error(`Import too large — max ${MAX_IMPORT_ITEMS} total items.`)
+  }
+
   await db.transaction('rw', db.users, db.exercises, db.logs, db.sessions, async () => {
     if (user) {
       const existing = await db.users.get(user.id)
