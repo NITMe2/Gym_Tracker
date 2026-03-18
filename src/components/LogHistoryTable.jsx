@@ -3,7 +3,7 @@ import { displayWeight } from '../utils/unitConversion'
 import { isPR, isCardioPR } from '../utils/prDetection'
 
 function formatDate(ts) {
-  return new Date(ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })
+  return new Date(ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 }
 
 function CardioHistoryTable({ logs, unit, exercise }) {
@@ -24,11 +24,11 @@ function CardioHistoryTable({ logs, unit, exercise }) {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+    <div className="w-full">
+      <table className="w-full table-fixed text-xs">
         <thead>
-          <tr className="text-muted text-xs font-heading uppercase tracking-widest border-b border-border">
-            <th className="text-left pb-2">Date</th>
+          <tr className="text-muted font-heading uppercase tracking-widest border-b border-border">
+            <th className="text-left pb-2 w-14">Date</th>
             {fields.map((f) => (
               <th key={f} className="text-right pb-2">{colHeader(f)}</th>
             ))}
