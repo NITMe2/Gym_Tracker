@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-const MUSCLE_GROUPS = ['All', 'Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core']
+const MUSCLE_GROUPS = ['All', 'Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core', 'Cardio']
 const CATEGORIES = ['All', 'Barbell', 'Dumbbell', 'Cable', 'Machine', 'Bodyweight', 'Other']
 
 export default function ExerciseSelector({ exercises, onSelect }) {

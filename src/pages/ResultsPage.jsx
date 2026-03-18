@@ -5,12 +5,25 @@ import ProgressChart from '../components/ProgressChart'
 import LogHistoryTable from '../components/LogHistoryTable'
 import PRBadge from '../components/PRBadge'
 import { displayWeight } from '../utils/unitConversion'
+import { findCardioPR } from '../utils/prDetection'
 
 const RANGES = [
   { label: '30d', days: 30 },
   { label: '90d', days: 90 },
   { label: 'All', days: null },
 ]
+
+function cardioFieldLabel(key, unit) {
+  switch (key) {
+    case 'duration': return 'min'
+    case 'speed': return unit === 'lbs' ? 'mph' : 'km/h'
+    case 'distance': return unit === 'lbs' ? 'mi' : 'km'
+    case 'incline': return '%'
+    case 'resistance': return ''
+    case 'level': return ''
+    default: return ''
+  }
+}
 
 export default function ResultsPage({ user }) {
   const [exercises, setExercises] = useState([])
@@ -32,6 +45,9 @@ export default function ResultsPage({ user }) {
   const filteredExercises = exercises.filter((ex) =>
     ex.name.toLowerCase().includes(search.toLowerCase())
   )
+
+  const isCardio = selectedEx?.exerciseType === 'cardio'
+  const cardioPR = isCardio ? findCardioPR(logs, selectedEx.prField) : null
 
   if (!selectedEx) {
     return (
@@ -70,17 +86,34 @@ export default function ResultsPage({ user }) {
         </div>
       </div>
 
-      {pr && (
-        <div className="bg-card border border-border rounded-xl p-4 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-muted font-heading uppercase tracking-widest">Personal Record</p>
-            <p className="text-white text-2xl font-mono font-bold mt-1">{displayWeight(pr.weightKg, unit)}</p>
-            <p className="text-muted text-xs mt-0.5">
-              {pr.sets}×{pr.reps} · {new Date(pr.timestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}
-            </p>
+      {isCardio ? (
+        cardioPR && (
+          <div className="bg-card border border-border rounded-xl p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted font-heading uppercase tracking-widest">Personal Record</p>
+              <p className="text-white text-2xl font-mono font-bold mt-1">
+                {cardioPR[selectedEx.prField]} {cardioFieldLabel(selectedEx.prField, unit)}
+              </p>
+              <p className="text-muted text-xs mt-0.5">
+                {new Date(cardioPR.timestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}
+              </p>
+            </div>
+            <PRBadge />
           </div>
-          <PRBadge />
-        </div>
+        )
+      ) : (
+        pr && (
+          <div className="bg-card border border-border rounded-xl p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted font-heading uppercase tracking-widest">Personal Record</p>
+              <p className="text-white text-2xl font-mono font-bold mt-1">{displayWeight(pr.weightKg, unit)}</p>
+              <p className="text-muted text-xs mt-0.5">
+                {pr.sets}×{pr.reps} · {new Date(pr.timestamp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}
+              </p>
+            </div>
+            <PRBadge />
+          </div>
+        )
       )}
 
       <div className="flex gap-2">
@@ -102,9 +135,9 @@ export default function ResultsPage({ user }) {
       ) : (
         <>
           <div className="bg-card border border-border rounded-xl p-4">
-            <ProgressChart logs={filteredLogs} unit={unit} pr={pr} />
+            <ProgressChart logs={filteredLogs} unit={unit} pr={isCardio ? cardioPR : pr} exercise={selectedEx} />
           </div>
-          <LogHistoryTable logs={filteredLogs} unit={unit} />
+          <LogHistoryTable logs={filteredLogs} unit={unit} exercise={selectedEx} />
         </>
       )}
     </div>

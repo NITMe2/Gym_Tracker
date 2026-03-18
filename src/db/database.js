@@ -3,11 +3,21 @@ import { seedExercises } from './seedExercises'
 
 export const db = new Dexie('IronLog')
 
-db.version(1).stores({
+const SCHEMA = {
   users: '++id, name',
   exercises: '++id, name, muscleGroup, category, isCustom',
   logs: '++id, userId, exerciseId, sessionId, timestamp',
   sessions: '++id, userId, startedAt, endedAt',
+}
+
+db.version(1).stores(SCHEMA)
+
+db.version(2).stores(SCHEMA).upgrade(async (tx) => {
+  const cardioExercises = seedExercises.filter((ex) => ex.exerciseType === 'cardio')
+  const existing = await tx.exercises.where('muscleGroup').equals('Cardio').count()
+  if (existing === 0) {
+    await tx.exercises.bulkAdd(cardioExercises)
+  }
 })
 
 db.on('populate', async () => {
@@ -32,13 +42,14 @@ export async function getExercises() {
   return db.exercises.toArray()
 }
 
-export async function addCustomExercise(name, muscleGroup, category) {
+export async function addCustomExercise(name, muscleGroup, category, exerciseType = 'strength', cardioFields = [], prField = 'duration') {
   const id = await db.exercises.add({
     name,
     muscleGroup,
     category,
     isCustom: true,
     createdAt: Date.now(),
+    ...(exerciseType === 'cardio' && { exerciseType, cardioFields, prField }),
   })
   return db.exercises.get(id)
 }
@@ -89,11 +100,17 @@ export async function addLog(userId, exerciseId, sessionId, data) {
     userId,
     exerciseId,
     sessionId,
-    weightKg: data.weightKg,
-    sets: data.sets,
-    reps: data.reps,
+    weightKg: data.weightKg ?? null,
+    sets: data.sets ?? null,
+    reps: data.reps ?? null,
     rpe: data.rpe || null,
     notes: data.notes || null,
+    duration: data.duration ?? null,
+    distance: data.distance ?? null,
+    speed: data.speed ?? null,
+    incline: data.incline ?? null,
+    resistance: data.resistance ?? null,
+    level: data.level ?? null,
     timestamp: Date.now(),
   })
   return db.logs.get(id)
