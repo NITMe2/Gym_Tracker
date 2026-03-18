@@ -6,21 +6,103 @@ import SetRepCounter from '../components/SetRepCounter'
 import { getExercises, addLog, getLastLogForExercise, addCustomExercise } from '../db/database'
 import { toKg, kgToLbs } from '../utils/unitConversion'
 
-const MUSCLE_GROUPS = ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core', 'Other']
+const MUSCLE_GROUPS = ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core', 'Cardio', 'Other']
 const CATEGORIES = ['Barbell', 'Dumbbell', 'Cable', 'Machine', 'Bodyweight', 'Other']
+
+const CARDIO_FIELD_OPTIONS = [
+  { key: 'duration', label: 'Duration (min)' },
+  { key: 'speed', label: 'Speed' },
+  { key: 'distance', label: 'Distance' },
+  { key: 'incline', label: 'Incline (%)' },
+  { key: 'resistance', label: 'Resistance' },
+  { key: 'level', label: 'Level' },
+]
+
+const PR_FIELD_OPTIONS = ['duration', 'speed', 'distance']
+
+function cardioFieldLabel(key, unit) {
+  switch (key) {
+    case 'duration': return 'Duration (min)'
+    case 'speed': return unit === 'lbs' ? 'Speed (mph)' : 'Speed (km/h)'
+    case 'distance': return unit === 'lbs' ? 'Distance (mi)' : 'Distance (km)'
+    case 'incline': return 'Incline (%)'
+    case 'resistance': return 'Resistance'
+    case 'level': return 'Level'
+    default: return key
+  }
+}
+
+function CardioInput({ fieldKey, value, onChange, unit }) {
+  const label = cardioFieldLabel(fieldKey, unit)
+  const step = fieldKey === 'speed' || fieldKey === 'distance' ? 0.1 : 1
+
+  return (
+    <div>
+      <p className="text-xs text-muted font-heading uppercase tracking-widest mb-2">{label}</p>
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => onChange(Math.max(0, +(+value - step).toFixed(1)))}
+          className="w-10 h-10 rounded-full bg-card border border-border text-white text-xl flex items-center justify-center active:bg-border"
+        >
+          −
+        </button>
+        <input
+          type="number"
+          value={value}
+          min={0}
+          step={step}
+          onChange={(e) => onChange(e.target.value === '' ? '' : +e.target.value)}
+          className="flex-1 text-center text-3xl font-mono bg-transparent text-white outline-none border-b-2 border-accent pb-1"
+        />
+        <button
+          type="button"
+          onClick={() => onChange(+(+value + step).toFixed(1))}
+          className="w-10 h-10 rounded-full bg-card border border-border text-white text-xl flex items-center justify-center active:bg-border"
+        >
+          +
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function formatCardioDone(cardioValues, exercise, unit) {
+  const parts = (exercise.cardioFields || []).map((key) => {
+    const val = cardioValues[key]
+    if (val == null || val === '' || val === 0) return null
+    switch (key) {
+      case 'duration': return `${val} min`
+      case 'speed': return `${val} ${unit === 'lbs' ? 'mph' : 'km/h'}`
+      case 'distance': return `${val} ${unit === 'lbs' ? 'mi' : 'km'}`
+      case 'incline': return `${val}%`
+      case 'resistance': return `Res ${val}`
+      case 'level': return `Lvl ${val}`
+      default: return null
+    }
+  })
+  return parts.filter(Boolean).join(' · ')
+}
 
 export default function LogPage({ user, session, onStartSession }) {
   const [exercises, setExercises] = useState([])
   const [step, setStep] = useState('pick') // pick | log | custom | done
   const [selected, setSelected] = useState(null)
+  // Strength fields
   const [weight, setWeight] = useState(0)
   const [sets, setSets] = useState(3)
   const [reps, setReps] = useState(10)
+  // Cardio fields
+  const [cardioValues, setCardioValues] = useState({})
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
+  // Custom exercise fields
   const [customName, setCustomName] = useState('')
   const [customGroup, setCustomGroup] = useState('Chest')
   const [customCategory, setCustomCategory] = useState('Dumbbell')
+  const [customType, setCustomType] = useState('strength')
+  const [customCardioFields, setCustomCardioFields] = useState(['duration'])
+  const [customPrField, setCustomPrField] = useState('duration')
   const navigate = useNavigate()
   const unit = user?.preferredUnit || 'kg'
 
@@ -28,18 +110,26 @@ export default function LogPage({ user, session, onStartSession }) {
     getExercises().then(setExercises)
   }, [])
 
+  const isCardio = selected?.exerciseType === 'cardio'
+
   async function handleSelect(exercise) {
     setSelected(exercise)
-    // pre-fill with last log
     const last = await getLastLogForExercise(user.id, exercise.id)
-    if (last) {
-      setWeight(unit === 'lbs' ? kgToLbs(last.weightKg) : last.weightKg)
-      setSets(last.sets)
-      setReps(last.reps)
+    if (exercise.exerciseType === 'cardio') {
+      const fields = exercise.cardioFields || []
+      const vals = {}
+      for (const f of fields) vals[f] = last?.[f] ?? 0
+      setCardioValues(vals)
     } else {
-      setWeight(0)
-      setSets(3)
-      setReps(10)
+      if (last) {
+        setWeight(unit === 'lbs' ? kgToLbs(last.weightKg) : last.weightKg)
+        setSets(last.sets)
+        setReps(last.reps)
+      } else {
+        setWeight(0)
+        setSets(3)
+        setReps(10)
+      }
     }
     setStep('log')
   }
@@ -48,20 +138,31 @@ export default function LogPage({ user, session, onStartSession }) {
     if (!user) return
     setSaving(true)
     let activeSession = session
-    if (!activeSession) {
-      activeSession = await onStartSession()
-    }
-    const weightKg = toKg(weight, unit)
-    await addLog(user.id, selected.id, activeSession.id, { weightKg, sets, reps, notes: notes || null })
+    if (!activeSession) activeSession = await onStartSession()
+
+    const data = isCardio
+      ? { ...cardioValues, notes: notes || null }
+      : { weightKg: toKg(weight, unit), sets, reps, notes: notes || null }
+
+    await addLog(user.id, selected.id, activeSession.id, data)
     setSaving(false)
     setStep('done')
+  }
+
+  function toggleCustomCardioField(key) {
+    setCustomCardioFields((prev) =>
+      prev.includes(key) ? prev.filter((f) => f !== key) : [...prev, key]
+    )
   }
 
   async function handleAddCustom(e) {
     e.preventDefault()
     const name = customName.trim()
     if (!name) return
-    const ex = await addCustomExercise(name, customGroup, customCategory)
+    const prField = customType === 'cardio'
+      ? (customCardioFields.includes(customPrField) ? customPrField : customCardioFields[0] || 'duration')
+      : undefined
+    const ex = await addCustomExercise(name, customGroup, customCategory, customType, customType === 'cardio' ? customCardioFields : [], prField)
     setExercises((prev) => [...prev, ex])
     setCustomName('')
     setStep('pick')
@@ -98,6 +199,25 @@ export default function LogPage({ user, session, onStartSession }) {
             maxLength={80}
             className="bg-card border border-border rounded-lg px-4 py-3 text-white placeholder-muted outline-none focus:border-accent"
           />
+
+          <div>
+            <p className="text-xs text-muted font-heading uppercase tracking-widest mb-2">Exercise Type</p>
+            <div className="flex gap-2">
+              {['strength', 'cardio'].map((t) => (
+                <button
+                  key={t} type="button"
+                  onClick={() => {
+                    setCustomType(t)
+                    setCustomGroup(t === 'cardio' ? 'Cardio' : 'Chest')
+                  }}
+                  className={`px-4 py-1.5 rounded-full text-xs font-heading uppercase border transition-colors ${customType === t ? 'bg-accent text-bg border-accent' : 'border-border text-muted'}`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div>
             <p className="text-xs text-muted font-heading uppercase tracking-widest mb-2">Muscle Group</p>
             <div className="flex flex-wrap gap-2">
@@ -111,6 +231,7 @@ export default function LogPage({ user, session, onStartSession }) {
               ))}
             </div>
           </div>
+
           <div>
             <p className="text-xs text-muted font-heading uppercase tracking-widest mb-2">Category</p>
             <div className="flex flex-wrap gap-2">
@@ -124,9 +245,43 @@ export default function LogPage({ user, session, onStartSession }) {
               ))}
             </div>
           </div>
+
+          {customType === 'cardio' && (
+            <>
+              <div>
+                <p className="text-xs text-muted font-heading uppercase tracking-widest mb-2">Track Fields</p>
+                <div className="flex flex-wrap gap-2">
+                  {CARDIO_FIELD_OPTIONS.map(({ key, label }) => (
+                    <button
+                      key={key} type="button" onClick={() => toggleCustomCardioField(key)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-heading uppercase border transition-colors ${customCardioFields.includes(key) ? 'bg-accent text-bg border-accent' : 'border-border text-muted'}`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {PR_FIELD_OPTIONS.filter((f) => customCardioFields.includes(f)).length > 1 && (
+                <div>
+                  <p className="text-xs text-muted font-heading uppercase tracking-widest mb-2">PR Metric</p>
+                  <div className="flex flex-wrap gap-2">
+                    {PR_FIELD_OPTIONS.filter((f) => customCardioFields.includes(f)).map((f) => (
+                      <button
+                        key={f} type="button" onClick={() => setCustomPrField(f)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-heading uppercase border transition-colors ${customPrField === f ? 'bg-accent text-bg border-accent' : 'border-border text-muted'}`}
+                      >
+                        {f}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
           <button
             type="submit"
-            disabled={!customName.trim()}
+            disabled={!customName.trim() || (customType === 'cardio' && customCardioFields.length === 0)}
             className="bg-accent text-bg py-4 rounded-lg font-heading text-xl uppercase tracking-wide disabled:opacity-40"
           >
             Add Exercise
@@ -146,13 +301,28 @@ export default function LogPage({ user, session, onStartSession }) {
           <p className="text-muted text-sm">{selected?.muscleGroup} · {selected?.category}</p>
         </div>
 
-        <WeightInput value={weight} onChange={setWeight} unit={unit} />
-
-        <div className="h-px bg-border" />
-
-        <SetRepCounter sets={sets} reps={reps} onSetsChange={setSets} onRepsChange={setReps} />
-
-        <div className="h-px bg-border" />
+        {isCardio ? (
+          <div className="flex flex-col gap-5">
+            {(selected.cardioFields || []).map((key, i) => (
+              <div key={key}>
+                <CardioInput
+                  fieldKey={key}
+                  value={cardioValues[key] ?? 0}
+                  onChange={(v) => setCardioValues((prev) => ({ ...prev, [key]: v }))}
+                  unit={unit}
+                />
+                {i < selected.cardioFields.length - 1 && <div className="h-px bg-border mt-5" />}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <>
+            <WeightInput value={weight} onChange={setWeight} unit={unit} />
+            <div className="h-px bg-border" />
+            <SetRepCounter sets={sets} reps={reps} onSetsChange={setSets} onRepsChange={setReps} />
+            <div className="h-px bg-border" />
+          </>
+        )}
 
         <div>
           <p className="text-xs text-muted font-heading uppercase tracking-widest mb-2">Notes (optional)</p>
@@ -168,22 +338,25 @@ export default function LogPage({ user, session, onStartSession }) {
 
         <button
           onClick={handleSave}
-          disabled={saving || weight <= 0}
+          disabled={saving || (isCardio ? !(cardioValues.duration > 0) : weight <= 0)}
           className="bg-accent text-bg py-5 rounded-xl font-heading text-2xl uppercase tracking-wide disabled:opacity-40 active:opacity-80 transition-opacity"
         >
-          {saving ? 'Saving...' : 'Save Set'}
+          {saving ? 'Saving...' : 'Save'}
         </button>
       </div>
     )
   }
 
   if (step === 'done') {
+    const summary = isCardio
+      ? formatCardioDone(cardioValues, selected, unit)
+      : `${weight} ${unit} × ${sets}×${reps}`
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-6 px-4">
         <div className="text-6xl">✅</div>
         <div className="text-center">
           <h2 className="font-heading text-3xl font-bold text-white">Logged!</h2>
-          <p className="text-muted mt-1">{selected?.name} — {weight} {unit} × {sets}×{reps}</p>
+          <p className="text-muted mt-1">{selected?.name} — {summary}</p>
         </div>
         <div className="flex gap-3 w-full">
           <button

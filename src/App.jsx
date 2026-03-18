@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useUser } from './hooks/useUser'
 import { useSession } from './hooks/useSession'
 import BottomNav from './components/BottomNav'
+import UpdateBanner from './components/UpdateBanner'
 import WelcomePage from './pages/WelcomePage'
 import HomePage from './pages/HomePage'
 import LogPage from './pages/LogPage'
@@ -31,6 +32,7 @@ export default function App() {
 
   return (
     <>
+      <UpdateBanner />
       <Routes>
         <Route path="/" element={
           <HomePage
