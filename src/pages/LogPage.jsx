@@ -37,8 +37,8 @@ function CardioInput({ fieldKey, value, onChange, unit }) {
   const step = fieldKey === 'speed' || fieldKey === 'distance' ? 0.1 : 1
 
   return (
-    <div>
-      <p className="text-xs text-muted font-heading uppercase tracking-widest mb-2">{label}</p>
+    <div className="flex flex-col items-center gap-2">
+      <p className="text-xs text-muted font-heading uppercase tracking-widest">{label}</p>
       <div className="flex items-center gap-3">
         <button
           type="button"
@@ -53,7 +53,7 @@ function CardioInput({ fieldKey, value, onChange, unit }) {
           min={0}
           step={step}
           onChange={(e) => onChange(e.target.value === '' ? '' : +e.target.value)}
-          className="flex-1 text-center text-3xl font-mono bg-transparent text-white outline-none border-b-2 border-accent pb-1"
+          className="w-20 text-center text-3xl font-mono bg-transparent text-white outline-none border-b-2 border-accent pb-1"
         />
         <button
           type="button"
@@ -293,7 +293,7 @@ export default function LogPage({ user, session, onStartSession }) {
 
   if (step === 'log') {
     return (
-      <div className="flex flex-col gap-6 px-4 pt-6 pb-24">
+      <div className="flex flex-col gap-4 px-4 pt-4 pb-24 h-screen overflow-y-auto">
         <button onClick={() => setStep('pick')} className="text-muted text-sm self-start">← Back</button>
 
         <div>
@@ -302,16 +302,15 @@ export default function LogPage({ user, session, onStartSession }) {
         </div>
 
         {isCardio ? (
-          <div className="flex flex-col gap-5">
-            {(selected.cardioFields || []).map((key, i) => (
-              <div key={key}>
+          <div className="grid grid-cols-2 gap-4">
+            {(selected.cardioFields || []).map((key) => (
+              <div key={key} className="bg-card border border-border rounded-xl p-3">
                 <CardioInput
                   fieldKey={key}
                   value={cardioValues[key] ?? 0}
                   onChange={(v) => setCardioValues((prev) => ({ ...prev, [key]: v }))}
                   unit={unit}
                 />
-                {i < selected.cardioFields.length - 1 && <div className="h-px bg-border mt-5" />}
               </div>
             ))}
           </div>
