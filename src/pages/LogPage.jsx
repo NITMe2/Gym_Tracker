@@ -16,6 +16,7 @@ const CARDIO_FIELD_OPTIONS = [
   { key: 'incline', label: 'Incline (%)' },
   { key: 'resistance', label: 'Resistance' },
   { key: 'level', label: 'Level' },
+  { key: 'calories', label: 'Calories Burned' },
 ]
 
 const PR_FIELD_OPTIONS = ['duration', 'speed', 'distance']
@@ -28,6 +29,7 @@ function cardioFieldLabel(key, unit) {
     case 'incline': return 'Incline (%)'
     case 'resistance': return 'Resistance'
     case 'level': return 'Level'
+    case 'calories': return 'Calories Burned'
     default: return key
   }
 }
@@ -78,6 +80,7 @@ function formatCardioDone(cardioValues, exercise, unit) {
       case 'incline': return `${val}%`
       case 'resistance': return `Res ${val}`
       case 'level': return `Lvl ${val}`
+      case 'calories': return `${val} kcal`
       default: return null
     }
   })

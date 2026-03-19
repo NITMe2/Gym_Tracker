@@ -21,6 +21,7 @@ function cardioFieldLabel(key, unit) {
     case 'incline': return '%'
     case 'resistance': return ''
     case 'level': return ''
+    case 'calories': return 'kcal'
     default: return ''
   }
 }

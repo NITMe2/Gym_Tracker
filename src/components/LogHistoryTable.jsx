@@ -19,6 +19,7 @@ function CardioHistoryTable({ logs, unit, exercise }) {
       case 'incline': return 'Incl%'
       case 'resistance': return 'Res'
       case 'level': return 'Lvl'
+      case 'calories': return 'kcal'
       default: return key
     }
   }

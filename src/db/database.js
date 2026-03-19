@@ -111,6 +111,7 @@ export async function addLog(userId, exerciseId, sessionId, data) {
     incline: data.incline ?? null,
     resistance: data.resistance ?? null,
     level: data.level ?? null,
+    calories: data.calories ?? null,
     timestamp: Date.now(),
   })
   return db.logs.get(id)
