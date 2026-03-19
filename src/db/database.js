@@ -20,6 +20,15 @@ db.version(2).stores(SCHEMA).upgrade(async (tx) => {
   }
 })
 
+db.version(3).stores(SCHEMA).upgrade(async (tx) => {
+  const cardioExercises = await tx.exercises.where('muscleGroup').equals('Cardio').toArray()
+  for (const ex of cardioExercises) {
+    if (ex.cardioFields && !ex.cardioFields.includes('calories')) {
+      await tx.exercises.update(ex.id, { cardioFields: [...ex.cardioFields, 'calories'] })
+    }
+  }
+})
+
 db.on('populate', async () => {
   await db.exercises.bulkAdd(seedExercises)
 })

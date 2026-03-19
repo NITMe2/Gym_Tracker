@@ -52,12 +52,12 @@ export const seedExercises = [
   { name: 'Hanging Leg Raise', muscleGroup: 'Core', category: 'Bodyweight', isCustom: false },
 
   // Cardio
-  { name: 'Treadmill', muscleGroup: 'Cardio', category: 'Machine', isCustom: false, exerciseType: 'cardio', cardioFields: ['duration', 'speed', 'incline'], prField: 'speed' },
-  { name: 'Outdoor Run', muscleGroup: 'Cardio', category: 'Other', isCustom: false, exerciseType: 'cardio', cardioFields: ['duration', 'distance', 'speed'], prField: 'distance' },
-  { name: 'Stationary Bike', muscleGroup: 'Cardio', category: 'Machine', isCustom: false, exerciseType: 'cardio', cardioFields: ['duration', 'speed', 'resistance'], prField: 'speed' },
-  { name: 'Rowing Machine', muscleGroup: 'Cardio', category: 'Machine', isCustom: false, exerciseType: 'cardio', cardioFields: ['duration', 'distance'], prField: 'distance' },
-  { name: 'Elliptical', muscleGroup: 'Cardio', category: 'Machine', isCustom: false, exerciseType: 'cardio', cardioFields: ['duration', 'resistance', 'incline'], prField: 'duration' },
-  { name: 'Stair Climber', muscleGroup: 'Cardio', category: 'Machine', isCustom: false, exerciseType: 'cardio', cardioFields: ['duration', 'level'], prField: 'duration' },
-  { name: 'Swimming', muscleGroup: 'Cardio', category: 'Other', isCustom: false, exerciseType: 'cardio', cardioFields: ['duration', 'distance'], prField: 'distance' },
-  { name: 'Jump Rope', muscleGroup: 'Cardio', category: 'Bodyweight', isCustom: false, exerciseType: 'cardio', cardioFields: ['duration'], prField: 'duration' },
+  { name: 'Treadmill', muscleGroup: 'Cardio', category: 'Machine', isCustom: false, exerciseType: 'cardio', cardioFields: ['duration', 'speed', 'incline', 'calories'], prField: 'speed' },
+  { name: 'Outdoor Run', muscleGroup: 'Cardio', category: 'Other', isCustom: false, exerciseType: 'cardio', cardioFields: ['duration', 'distance', 'speed', 'calories'], prField: 'distance' },
+  { name: 'Stationary Bike', muscleGroup: 'Cardio', category: 'Machine', isCustom: false, exerciseType: 'cardio', cardioFields: ['duration', 'speed', 'resistance', 'calories'], prField: 'speed' },
+  { name: 'Rowing Machine', muscleGroup: 'Cardio', category: 'Machine', isCustom: false, exerciseType: 'cardio', cardioFields: ['duration', 'distance', 'calories'], prField: 'distance' },
+  { name: 'Elliptical', muscleGroup: 'Cardio', category: 'Machine', isCustom: false, exerciseType: 'cardio', cardioFields: ['duration', 'resistance', 'incline', 'calories'], prField: 'duration' },
+  { name: 'Stair Climber', muscleGroup: 'Cardio', category: 'Machine', isCustom: false, exerciseType: 'cardio', cardioFields: ['duration', 'level', 'calories'], prField: 'duration' },
+  { name: 'Swimming', muscleGroup: 'Cardio', category: 'Other', isCustom: false, exerciseType: 'cardio', cardioFields: ['duration', 'distance', 'calories'], prField: 'distance' },
+  { name: 'Jump Rope', muscleGroup: 'Cardio', category: 'Bodyweight', isCustom: false, exerciseType: 'cardio', cardioFields: ['duration', 'calories'], prField: 'duration' },
 ]
