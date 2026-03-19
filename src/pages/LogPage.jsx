@@ -39,11 +39,14 @@ function CardioInput({ fieldKey, value, onChange, unit }) {
   const step = fieldKey === 'speed' || fieldKey === 'distance' ? 0.1 : 1
   const holdTimer = useRef(null)
   const holdInterval = useRef(null)
+  const valueRef = useRef(value)
+  useEffect(() => { valueRef.current = value }, [value])
 
   function startHold(direction) {
     holdTimer.current = setTimeout(() => {
       holdInterval.current = setInterval(() => {
-        onChange((prev) => +(Math.max(0, +prev + direction * 10)).toFixed(1))
+        valueRef.current = +(Math.max(0, +valueRef.current + direction * 10)).toFixed(1)
+        onChange(valueRef.current)
       }, 80)
     }, 400)
   }
@@ -52,6 +55,8 @@ function CardioInput({ fieldKey, value, onChange, unit }) {
     clearTimeout(holdTimer.current)
     clearInterval(holdInterval.current)
   }
+
+  const btnClass = "w-10 h-10 rounded-full bg-card border border-border text-white flex items-center justify-center active:bg-border select-none"
 
   return (
     <div className="flex flex-col items-center gap-2">
@@ -63,11 +68,12 @@ function CardioInput({ fieldKey, value, onChange, unit }) {
           onMouseDown={() => startHold(-1)}
           onMouseUp={stopHold}
           onMouseLeave={stopHold}
-          onTouchStart={() => startHold(-1)}
+          onTouchStart={(e) => { e.preventDefault(); startHold(-1) }}
           onTouchEnd={stopHold}
-          className="w-10 h-10 rounded-full bg-card border border-border text-white text-xl flex items-center justify-center active:bg-border"
+          onContextMenu={(e) => e.preventDefault()}
+          className={btnClass}
         >
-          −
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
         <input
           type="number"
@@ -83,11 +89,12 @@ function CardioInput({ fieldKey, value, onChange, unit }) {
           onMouseDown={() => startHold(1)}
           onMouseUp={stopHold}
           onMouseLeave={stopHold}
-          onTouchStart={() => startHold(1)}
+          onTouchStart={(e) => { e.preventDefault(); startHold(1) }}
           onTouchEnd={stopHold}
-          className="w-10 h-10 rounded-full bg-card border border-border text-white text-xl flex items-center justify-center active:bg-border"
+          onContextMenu={(e) => e.preventDefault()}
+          className={btnClass}
         >
-          +
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
       </div>
     </div>
