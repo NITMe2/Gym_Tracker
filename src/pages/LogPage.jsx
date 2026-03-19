@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ExerciseSelector from '../components/ExerciseSelector'
 import WeightInput from '../components/WeightInput'
@@ -37,6 +37,21 @@ function cardioFieldLabel(key, unit) {
 function CardioInput({ fieldKey, value, onChange, unit }) {
   const label = cardioFieldLabel(fieldKey, unit)
   const step = fieldKey === 'speed' || fieldKey === 'distance' ? 0.1 : 1
+  const holdTimer = useRef(null)
+  const holdInterval = useRef(null)
+
+  function startHold(direction) {
+    holdTimer.current = setTimeout(() => {
+      holdInterval.current = setInterval(() => {
+        onChange((prev) => +(Math.max(0, +prev + direction * 10)).toFixed(1))
+      }, 80)
+    }, 400)
+  }
+
+  function stopHold() {
+    clearTimeout(holdTimer.current)
+    clearInterval(holdInterval.current)
+  }
 
   return (
     <div className="flex flex-col items-center gap-2">
@@ -45,6 +60,11 @@ function CardioInput({ fieldKey, value, onChange, unit }) {
         <button
           type="button"
           onClick={() => onChange(Math.max(0, +(+value - step).toFixed(1)))}
+          onMouseDown={() => startHold(-1)}
+          onMouseUp={stopHold}
+          onMouseLeave={stopHold}
+          onTouchStart={() => startHold(-1)}
+          onTouchEnd={stopHold}
           className="w-10 h-10 rounded-full bg-card border border-border text-white text-xl flex items-center justify-center active:bg-border"
         >
           −
@@ -60,6 +80,11 @@ function CardioInput({ fieldKey, value, onChange, unit }) {
         <button
           type="button"
           onClick={() => onChange(+(+value + step).toFixed(1))}
+          onMouseDown={() => startHold(1)}
+          onMouseUp={stopHold}
+          onMouseLeave={stopHold}
+          onTouchStart={() => startHold(1)}
+          onTouchEnd={stopHold}
           className="w-10 h-10 rounded-full bg-card border border-border text-white text-xl flex items-center justify-center active:bg-border"
         >
           +
