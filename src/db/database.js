@@ -29,6 +29,16 @@ db.version(3).stores(SCHEMA).upgrade(async (tx) => {
   }
 })
 
+db.version(4).stores(SCHEMA).upgrade(async (tx) => {
+  const descriptionMap = Object.fromEntries(seedExercises.map((ex) => [ex.name, ex.description]))
+  const presets = await tx.exercises.filter((ex) => !ex.isCustom).toArray()
+  for (const ex of presets) {
+    if (descriptionMap[ex.name]) {
+      await tx.exercises.update(ex.id, { description: descriptionMap[ex.name] })
+    }
+  }
+})
+
 db.on('populate', async () => {
   await db.exercises.bulkAdd(seedExercises)
 })
