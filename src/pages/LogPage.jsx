@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import ExerciseSelector from '../components/ExerciseSelector'
 import WeightInput from '../components/WeightInput'
 import SetRepCounter from '../components/SetRepCounter'
@@ -139,11 +139,22 @@ export default function LogPage({ user, session, onStartSession }) {
   const [customCardioFields, setCustomCardioFields] = useState(['duration'])
   const [customPrField, setCustomPrField] = useState('duration')
   const navigate = useNavigate()
+  const location = useLocation()
   const unit = user?.preferredUnit || 'kg'
+  const didAutoSelect = useRef(false)
 
   useEffect(() => {
     getExercises().then(setExercises)
   }, [])
+
+  // Auto-select exercise passed from ExercisesPage
+  useEffect(() => {
+    if (didAutoSelect.current || !user || !location.state?.exercise) return
+    didAutoSelect.current = true
+    handleSelect(location.state.exercise)
+    // Clear state so navigating back then forward doesn't re-trigger
+    navigate(location.pathname, { replace: true, state: {} })
+  })
 
   const isCardio = selected?.exerciseType === 'cardio'
 
@@ -372,7 +383,7 @@ export default function LogPage({ user, session, onStartSession }) {
 
         <button
           onClick={handleSave}
-          disabled={saving || (isCardio ? !(cardioValues.duration > 0) : weight <= 0)}
+          disabled={saving || (isCardio ? !(selected?.cardioFields || []).some(f => cardioValues[f] > 0) : weight <= 0)}
           className="bg-accent text-bg py-5 rounded-xl font-heading text-2xl uppercase tracking-wide disabled:opacity-40 active:opacity-80 transition-opacity"
         >
           {saving ? 'Saving...' : 'Save'}

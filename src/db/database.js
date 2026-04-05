@@ -51,13 +51,14 @@ export async function getExercises() {
   return db.exercises.toArray()
 }
 
-export async function addCustomExercise(name, muscleGroup, category, exerciseType = 'strength', cardioFields = [], prField = 'duration') {
+export async function addCustomExercise(name, muscleGroup, category, exerciseType = 'strength', cardioFields = [], prField = 'duration', description = '') {
   const id = await db.exercises.add({
     name,
     muscleGroup,
     category,
     isCustom: true,
     createdAt: Date.now(),
+    ...(description && { description }),
     ...(exerciseType === 'cardio' && { exerciseType, cardioFields, prField }),
   })
   return db.exercises.get(id)
@@ -102,6 +103,15 @@ export async function getLastSession(userId) {
     .filter((s) => s.endedAt !== null)
     .toArray()
   return sessions.sort((a, b) => b.endedAt - a.endedAt)[0] || null
+}
+
+export async function getAllSessions(userId) {
+  const sessions = await db.sessions
+    .where('userId')
+    .equals(userId)
+    .filter((s) => s.endedAt !== null)
+    .toArray()
+  return sessions.sort((a, b) => b.startedAt - a.startedAt)
 }
 
 export async function addLog(userId, exerciseId, sessionId, data) {
@@ -176,9 +186,13 @@ export async function importAllData(jsonString) {
 
   await db.transaction('rw', db.users, db.exercises, db.logs, db.sessions, async () => {
     if (user) {
-      const existing = await db.users.get(user.id)
-      if (existing) await db.users.update(user.id, user)
-      else await db.users.add(user)
+      const currentUser = await db.users.orderBy('id').first()
+      if (currentUser) {
+        const { id: _importedId, ...userData } = user
+        await db.users.update(currentUser.id, userData)
+      } else {
+        await db.users.add(user)
+      }
     }
     for (const ex of exercises || []) {
       const existing = await db.exercises.get(ex.id)
@@ -196,8 +210,9 @@ export async function importAllData(jsonString) {
 }
 
 export async function clearAllData() {
-  await db.transaction('rw', db.users, db.logs, db.sessions, async () => {
+  await db.transaction('rw', db.users, db.exercises, db.logs, db.sessions, async () => {
     await db.users.clear()
+    await db.exercises.clear()
     await db.logs.clear()
     await db.sessions.clear()
   })
