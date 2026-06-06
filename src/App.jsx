@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import IronLogLogo from './components/IronLogLogo'
 import { useUser } from './hooks/useUser'
 import { useSession } from './hooks/useSession'
 import BottomNav from './components/BottomNav'
@@ -18,7 +19,8 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex flex-col items-center justify-center gap-4 min-h-screen">
+        <IronLogLogo size={64} className="drop-shadow-[0_0_16px_rgba(0,229,160,0.5)]" />
         <span className="font-heading text-4xl text-accent">IronLog</span>
       </div>
     )

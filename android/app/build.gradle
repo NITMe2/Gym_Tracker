@@ -7,7 +7,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace "com.ironlogapp.tracker"
+    namespace "com.ironlog.app"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
         applicationId "com.ironlogapp.tracker"
