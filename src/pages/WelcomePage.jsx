@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import IronLogLogo from '../components/IronLogLogo'
 
 export default function WelcomePage({ onRegister }) {
   const [name, setName] = useState('')
@@ -18,9 +19,12 @@ export default function WelcomePage({ onRegister }) {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-6 gap-8">
-      <div className="text-center">
-        <h1 className="font-heading text-6xl font-bold text-white tracking-tight">IronLog</h1>
-        <p className="text-muted mt-2">Track your weights. See your progress.</p>
+      <div className="flex flex-col items-center gap-4">
+        <IronLogLogo size={80} className="drop-shadow-[0_0_18px_rgba(0,229,160,0.5)]" />
+        <div className="text-center">
+          <h1 className="font-heading text-6xl font-bold text-white tracking-tight">IronLog</h1>
+          <p className="text-muted mt-2">Track your weights. See your progress.</p>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="w-full flex flex-col gap-5">
